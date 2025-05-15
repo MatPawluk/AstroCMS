@@ -1,0 +1,20 @@
+---
+import '../../styles/global.css';
+import AdminLayout from '../../layouts/AdminLayout.vue';
+import Dashboard from '../../components/common/admin/Dashboard.vue';
+---
+
+<!doctype html>
+<html lang="pl">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Panel administratora | Astro CMS</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	</head>
+	<body>
+		<AdminLayout client:load>
+			<Dashboard client:load />
+		</AdminLayout>
+	</body>
+</html>

@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { usePostsStore } from '../../lib/firebase';
+import { Timestamp } from 'firebase/firestore';
+
+// Pobierz parametr slug z URL
+const { slug } = Astro.params;
+
+// Pobierz post na podstawie sluga
+const postsStore = usePostsStore();
+const post = slug ? await postsStore.getPostBySlug(slug) : null;
+
+// Jeśli post nie istnieje lub nie jest opublikowany, przekieruj na stronę 404
+if (!slug || !post || !post.isPublished) {
+	return Astro.redirect('/404');
+}
+
+// Formatowanie daty
+const formatDate = (timestamp: Timestamp | Date | null) => {
+const formatDate = (timestamp: Timestamp | Date | null) => {
+
+	const date = timestamp instanceof Timestamp ? timestamp.toDate() : (timestamp ? new Date(timestamp) : new Date());
+	return new Intl.DateTimeFormat('pl-PL', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+	}).format(date);
+};
+---
+
+<BaseLayout title={post.title} description={post.excerpt || post.content.substring(0, 150)}>
+	<div class="bg-white px-6 py-32 lg:px-8">
+		<div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
+			<p class="text-base font-semibold leading-7 text-primary-600">Blog</p>
+			<h1 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{post.title}</h1>
+
+			<div class="mt-6 flex items-center">
+				<div class="text-sm leading-6">
+					<p class="font-semibold text-gray-900">{post.author}</p>
+					<p class="text-gray-600">{formatDate(post.publishedAt)}</p>
+				</div>
+			</div>
+
+			{post.excerpt && <p class="mt-6 text-xl leading-8 text-gray-500">{post.excerpt}</p>}
+
+			<div class="mt-10 prose prose-lg prose-primary mx-auto">
+				{post.content.split('\n').map(paragraph => <p>{paragraph}</p>)}
+			</div>
+
+			<div class="mt-16">
+				<a href="/posts" class="text-sm font-semibold leading-6 text-primary-600"> ← Powrót do listy wpisów </a>
+			</div>
+		</div>
+	</div>
+</BaseLayout>
