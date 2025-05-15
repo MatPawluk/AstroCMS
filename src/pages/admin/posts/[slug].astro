@@ -1,6 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { usePostsStore } from '../../lib/firebase';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { usePostsStore } from '../../../lib/firebase';
 import { Timestamp } from 'firebase/firestore';
 
 // Pobierz parametr slug z URL
@@ -17,7 +17,7 @@ if (!slug || !post || !post.isPublished) {
 
 // Formatowanie daty
 const formatDate = (timestamp: Timestamp | Date | null) => {
-	const date = timestamp instanceof Timestamp ? timestamp.toDate() : timestamp ? new Date(timestamp) : new Date();
+	const date = timestamp instanceof Timestamp ? timestamp.toDate() : (timestamp ? new Date(timestamp) : new Date());
 	return new Intl.DateTimeFormat('pl-PL', {
 		year: 'numeric',
 		month: 'long',
@@ -41,8 +41,8 @@ const formatDate = (timestamp: Timestamp | Date | null) => {
 
 			{post.excerpt && <p class="mt-6 text-xl leading-8 text-gray-500">{post.excerpt}</p>}
 
-			<!-- Użyj set:html aby poprawnie renderować treść HTML -->
-			<div class="mt-10 prose prose-lg prose-primary mx-auto" set:html={post.content} />
+			<!-- Użyj set:html dla treści HTML z TinyMCE -->
+			<div class="mt-10 prose prose-lg prose-primary mx-auto" set:html={post.content}></div>
 
 			<div class="mt-16">
 				<a href="/posts" class="text-sm font-semibold leading-6 text-primary-600"> ← Powrót do listy wpisów </a>
