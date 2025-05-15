@@ -1,3 +1,5 @@
+// src/pages/admin/login.astro - zastąp całą zawartość tym kodem
+
 ---
 import '../../styles/global.css';
 ---
@@ -7,7 +9,6 @@ import '../../styles/global.css';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<title>Logowanie | Astro CMS</title>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 	</head>
@@ -22,12 +23,12 @@ import '../../styles/global.css';
 					<div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
 						<div id="error-message" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md hidden"></div>
 
-						<div id="loading" class="mb-4 p-4 text-center">
+						<div id="loading" class="mb-4 p-4 text-center hidden">
 							<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-							<p class="mt-2">Sprawdzanie stanu...</p>
+							<p class="mt-2">Logowanie...</p>
 						</div>
 
-						<form id="login-form" class="space-y-6 hidden">
+						<form id="login-form" class="space-y-6">
 							<div>
 								<label for="email" class="block text-sm font-medium text-gray-700"> Adres email </label>
 								<div class="mt-1">
@@ -98,14 +99,9 @@ import '../../styles/global.css';
 
 	// Sprawdź stan uwierzytelnienia
 	onAuthStateChanged(auth, user => {
-		loadingElement.classList.add('hidden');
-
 		if (user) {
 			// Użytkownik jest zalogowany, przekieruj do panelu
-			window.location.href = '/admin';
-		} else {
-			// Użytkownik nie jest zalogowany, pokaż formularz
-			loginForm.classList.remove('hidden');
+			window.location.href = '/admin/dashboard';
 		}
 	});
 
@@ -121,22 +117,24 @@ import '../../styles/global.css';
 		if (!email || !password) return;
 
 		try {
-			// Zmień stan przycisku
+			// Zmień stan przycisku i pokaż ładowanie
 			loginButton.textContent = 'Logowanie...';
 			loginButton.disabled = true;
 			errorMessage.classList.add('hidden');
+			loadingElement.classList.remove('hidden');
 
 			// Logowanie
 			await signInWithEmailAndPassword(auth, email, password);
 
 			// Przekierowanie do panelu administratora
-			window.location.href = '/admin';
+			window.location.href = '/admin/dashboard';
 		} catch (error) {
 			// Obsługa błędów
 			console.error('Błąd logowania:', error);
 
 			errorMessage.textContent = 'Nieprawidłowe dane logowania. Spróbuj ponownie.';
 			errorMessage.classList.remove('hidden');
+			loadingElement.classList.add('hidden');
 
 			loginButton.textContent = 'Zaloguj się';
 			loginButton.disabled = false;

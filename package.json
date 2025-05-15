@@ -20,7 +20,8 @@
     "firebase": "^11.7.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "vue": "^3.5.14"
+    "vue": "^3.5.14",
+    "tinymce": "^6.8.0"
   },
   "devDependencies": {
     "@astrojs/netlify": "^6.3.3",
