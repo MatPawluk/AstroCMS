@@ -1,18 +1,145 @@
 ---
 import '../../styles/global.css';
-import SimpleLoginForm from '../../components/common/admin/SimpleLoginForm.vue';
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Logowanie | Astro CMS</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  </head>
-  <body class="bg-gray-50">
-    <SimpleLoginForm client:load />
-  </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Logowanie | Astro CMS</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	</head>
+	<body class="bg-gray-50">
+		<div id="app">
+			<div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+				<div class="sm:mx-auto sm:w-full sm:max-w-md">
+					<h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Zaloguj się do panelu</h2>
+				</div>
+
+				<div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+					<div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+						<div id="error-message" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md hidden"></div>
+
+						<div id="loading" class="mb-4 p-4 text-center">
+							<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+							<p class="mt-2">Sprawdzanie stanu...</p>
+						</div>
+
+						<form id="login-form" class="space-y-6 hidden">
+							<div>
+								<label for="email" class="block text-sm font-medium text-gray-700"> Adres email </label>
+								<div class="mt-1">
+									<input
+										id="email"
+										name="email"
+										type="email"
+										autocomplete="email"
+										required
+										class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+									/>
+								</div>
+							</div>
+
+							<div>
+								<label for="password" class="block text-sm font-medium text-gray-700"> Hasło </label>
+								<div class="mt-1">
+									<input
+										id="password"
+										name="password"
+										type="password"
+										autocomplete="current-password"
+										required
+										class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+									/>
+								</div>
+							</div>
+
+							<div>
+								<button
+									type="submit"
+									id="login-button"
+									class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+									Zaloguj się
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>
+
+<script>
+	// Importujemy Firebase używając biblioteki ES Module
+	import { initializeApp } from 'firebase/app';
+	import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+
+	// Konfiguracja Firebase
+	const firebaseConfig = {
+		apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
+		authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
+		projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
+		storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
+		messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+		appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
+	};
+
+	// Inicjalizacja Firebase
+	const app = initializeApp(firebaseConfig);
+	const auth = getAuth(app);
+
+	// Elementy interfejsu
+	const loadingElement = document.getElementById('loading');
+	const loginForm = document.getElementById('login-form');
+	const errorMessage = document.getElementById('error-message');
+
+	// Sprawdź stan uwierzytelnienia
+	onAuthStateChanged(auth, user => {
+		loadingElement.classList.add('hidden');
+
+		if (user) {
+			// Użytkownik jest zalogowany, przekieruj do panelu
+			window.location.href = '/admin';
+		} else {
+			// Użytkownik nie jest zalogowany, pokaż formularz
+			loginForm.classList.remove('hidden');
+		}
+	});
+
+	// Obsługa logowania
+	loginForm.addEventListener('submit', async e => {
+		e.preventDefault();
+
+		const email = document.getElementById('email').value;
+		const password = document.getElementById('password').value;
+		const loginButton = document.getElementById('login-button');
+
+		// Walidacja formularza
+		if (!email || !password) return;
+
+		try {
+			// Zmień stan przycisku
+			loginButton.textContent = 'Logowanie...';
+			loginButton.disabled = true;
+			errorMessage.classList.add('hidden');
+
+			// Logowanie
+			await signInWithEmailAndPassword(auth, email, password);
+
+			// Przekierowanie do panelu administratora
+			window.location.href = '/admin';
+		} catch (error) {
+			// Obsługa błędów
+			console.error('Błąd logowania:', error);
+
+			errorMessage.textContent = 'Nieprawidłowe dane logowania. Spróbuj ponownie.';
+			errorMessage.classList.remove('hidden');
+
+			loginButton.textContent = 'Zaloguj się';
+			loginButton.disabled = false;
+		}
+	});
+</script>

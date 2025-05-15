@@ -10,7 +10,12 @@
 					{{ error }}
 				</div>
 
-				<form class="space-y-6" @submit.prevent="handleLogin">
+				<div v-if="isLoading" class="mb-4 p-4 text-center">
+					<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+					<p class="mt-2">Logowanie...</p>
+				</div>
+
+				<form v-else class="space-y-6" @submit.prevent="handleLogin">
 					<div>
 						<label for="email" class="block text-sm font-medium text-gray-700"> Adres email </label>
 						<div class="mt-1">
@@ -40,10 +45,8 @@
 					<div>
 						<button
 							type="submit"
-							class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-							:disabled="isLoading">
-							<span v-if="isLoading">Logowanie...</span>
-							<span v-else>Zaloguj się</span>
+							class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+							Zaloguj się
 						</button>
 					</div>
 				</form>
@@ -52,60 +55,71 @@
 	</div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useAuth } from '../../../lib/firebase';
+<script>
+import { ref, reactive, onBeforeMount } from 'vue';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
 
-const auth = useAuth();
-const isLoading = ref(false);
-const error = ref('');
-const isAuthenticated = ref(false);
+// Inicjalizacja Firebase
+const firebaseConfig = {
+	apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
+	authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
+	projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
+	storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+	appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
+};
 
-const form = reactive({
-	email: '',
-	password: '',
-});
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-// Sprawdź stan uwierzytelnienia po załadowaniu komponentu
-onMounted(() => {
-	// Ustawić timeout, aby dać Firebase czas na inicjalizację
-	setTimeout(() => {
-		if (auth.currentUser.value) {
-			console.log('Użytkownik jest już zalogowany:', auth.currentUser.value.email);
-			window.location.href = '/admin';
-		}
-	}, 1000);
-});
+export default {
+	setup() {
+		const isLoading = ref(true);
+		const error = ref('');
 
-const handleLogin = async () => {
-	if (!form.email || !form.password) return;
+		const form = reactive({
+			email: '',
+			password: '',
+		});
 
-	isLoading.value = true;
-	error.value = '';
+		// Sprawdź stan uwierzytelnienia bezpośrednio w komponencie
+		onBeforeMount(() => {
+			onAuthStateChanged(auth, user => {
+				isLoading.value = false;
 
-	try {
-		console.log('Próba logowania:', form.email);
-		const { user, error: authError } = await auth.login(form.email, form.password);
+				if (user) {
+					console.log('Użytkownik zalogowany:', user.email);
+					// Przekieruj do dashboardu
+					window.location.href = '/admin';
+				}
+			});
+		});
 
-		if (authError) {
-			console.error('Błąd logowania:', authError);
-			error.value = 'Nieprawidłowe dane logowania. Spróbuj ponownie.';
-			isLoading.value = false;
-			return;
-		}
+		const handleLogin = async () => {
+			if (!form.email || !form.password) return;
 
-		console.log('Logowanie udane:', user);
-		isAuthenticated.value = true;
+			isLoading.value = true;
+			error.value = '';
 
-		// Ustawić timeout przed przekierowaniem, aby upewnić się, że stan uwierzytelnienia jest zaktualizowany
-		setTimeout(() => {
-			console.log('Przekierowanie do panelu administratora');
-			window.location.href = '/admin';
-		}, 1000);
-	} catch (err) {
-		console.error('Błąd podczas logowania:', err);
-		error.value = 'Wystąpił błąd podczas logowania. Spróbuj ponownie.';
-		isLoading.value = false;
-	}
+			try {
+				// Logowanie bezpośrednio przez Firebase
+				await signInWithEmailAndPassword(auth, form.email, form.password);
+
+				// Przekierowanie następuje automatycznie w onAuthStateChanged
+			} catch (err) {
+				console.error('Błąd logowania:', err.message);
+				error.value = 'Nieprawidłowe dane logowania. Spróbuj ponownie.';
+				isLoading.value = false;
+			}
+		};
+
+		return {
+			isLoading,
+			error,
+			form,
+			handleLogin,
+		};
+	},
 };
 </script>
